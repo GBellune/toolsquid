@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f0">
+  <meta name="description" content="ToolSquid, une boîte à outils simple et privée pour le quotidien numérique.">
+  <title>ToolSquid — boîte à outils</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f5f0;
+      --surface: #ffffff;
+      --ink: #17221f;
+      --muted: #71807a;
+      --line: #dfe5df;
+      --green: #126b55;
+      --green-light: #e5f1eb;
+      --lime: #d8ef73;
+      --coral: #eb7359;
+      --shadow: 0 12px 32px rgba(25, 44, 37, .055);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--paper); color: var(--ink); }
+    button, textarea, input { font: inherit; }
+    button { color: inherit; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 246px minmax(0, 1fr); }
+    .rail { padding: 26px 17px; background: #192923; color: #f4f5f0; display: flex; flex-direction: column; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 2px 10px 35px; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px 10px 10px 3px; background: var(--lime); color: #192923; font-weight: 800; font-size: 18px; }
+    .brand-name { font-size: 19px; font-weight: 750; }
+    .brand-name span { color: var(--lime); }
+    .rail-label { padding: 0 11px; color: #91a39a; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; margin-top: 12px; }
+    .nav button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 11px; border: 0; border-radius: 6px; background: transparent; color: #c4d0ca; text-align: left; cursor: pointer; transition: background .18s, color .18s; }
+    .nav button:hover { background: #263a32; color: white; }
+    .nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 11px; border-radius: 6px; color: #c4d0ca; text-align: left; text-decoration: none; transition: background .18s, color .18s; }
+    .nav a:hover { background: #263a32; color: white; }
+    .nav button[aria-current="page"] { background: #30473d; color: white; }
+    .nav-index { width: 24px; color: #91a39a; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .nav button[aria-current="page"] .nav-index { color: var(--lime); }
+    .rail-note { margin: auto 9px 2px; padding-top: 20px; border-top: 1px solid #34443d; color: #a9b7b0; font-size: 12px; line-height: 1.6; }
+    .rail-note strong { display: block; margin-bottom: 4px; color: #e4ebe6; font-size: 12px; }
+    .main { min-width: 0; padding: 30px clamp(20px, 5vw, 72px) 60px; }
+    .topbar { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .crumb { color: var(--muted); font-size: 13px; }
+    .privacy { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: 12px; font-weight: 650; }
+    .privacy-dot { width: 8px; height: 8px; border-radius: 50%; background: #45a47d; box-shadow: 0 0 0 3px #dcefe5; }
+    .content { max-width: 1120px; margin: 58px auto 0; }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: 11px; font-weight: 750; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.12; font-weight: 680; }
+    .intro { max-width: 570px; margin: 13px 0 33px; color: var(--muted); font-size: 15px; line-height: 1.65; }
+    .tool-panel { display: none; animation: appear .24s ease-out both; }
+    .tool-panel.active { display: block; }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+    .panel-head h2 { margin: 0; font-size: 19px; font-weight: 700; }
+    .panel-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .panel-tag { flex: none; padding: 7px 9px; border-radius: 4px; background: var(--green-light); color: var(--green); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .work-area { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+    .field { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
+    .field-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 24px; margin-bottom: 10px; }
+    .field-label { color: #52615a; font-size: 11px; font-weight: 750; text-transform: uppercase; }
+    .field-hint { color: #8a9791; font-size: 11px; }
+    textarea { display: block; width: 100%; min-height: 240px; resize: vertical; padding: 13px; border: 1px solid var(--line); border-radius: 4px; outline: none; background: #fbfcfa; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; line-height: 1.6; transition: border-color .15s, box-shadow .15s; }
+    textarea:focus, input:focus-visible { border-color: #4b9c7d; box-shadow: 0 0 0 3px rgba(49, 139, 106, .12); outline: none; }
+    textarea[readonly] { background: #f6f8f5; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 13px; }
+    .button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 4px; background: white; font-size: 12px; font-weight: 650; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .button:hover { border-color: #9aaca2; background: #f8faf7; }
+    .button:active { transform: translateY(1px); }
+    .button.primary { border-color: var(--green); background: var(--green); color: white; }
+    .button.primary:hover { background: #0d5946; }
+    .button.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+    .status { min-height: 18px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .status.error { color: #ba4939; }
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 13px; }
+    .metric { padding: 11px 12px; border: 1px solid var(--line); border-radius: 4px; background: #fbfcfa; }
+    .metric strong { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+    .metric span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .text-area { min-height: 268px; }
+    .single-field { max-width: 760px; }
+    .generator { max-width: 760px; }
+    .generator-output { display: flex; gap: 8px; }
+    .generator-output input { flex: 1; min-width: 0; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 4px; background: #f6f8f5; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+    .settings { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; margin: 17px 0; }
+    .setting-label { color: #52615a; font-size: 12px; font-weight: 650; }
+    .length-control { display: flex; align-items: center; gap: 9px; }
+    input[type="range"] { width: 150px; accent-color: var(--green); }
+    .length-value { min-width: 22px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .check { display: inline-flex; align-items: center; gap: 6px; color: #52615a; font-size: 12px; cursor: pointer; }
+    .check input { accent-color: var(--green); }
+    .generator-switch { display: flex; gap: 5px; margin: 2px 0 16px; }
+    .generator-switch button { padding: 8px 11px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--muted); font-size: 12px; cursor: pointer; }
+    .generator-switch button[aria-pressed="true"] { border-color: var(--green); background: var(--green-light); color: var(--green); font-weight: 700; }
+    .footer { max-width: 1120px; margin: 48px auto 0; padding-top: 15px; border-top: 1px solid var(--line); color: #89958f; font-size: 11px; }
+    button:focus-visible { outline: 3px solid rgba(49, 139, 106, .35); outline-offset: 2px; }
+
+    @media (max-width: 760px) {
+      .shell { grid-template-columns: 1fr; }
+      .rail { padding: 14px 16px 0; }
+      .brand { padding: 0 3px 13px; }
+      .rail-label, .rail-note { display: none; }
+      .nav { display: flex; overflow-x: auto; gap: 5px; margin: 0 -16px; padding: 0 16px 11px; scrollbar-width: thin; }
+      .nav button { flex: none; min-height: 38px; padding: 0 10px; font-size: 12px; }
+      .nav-index { width: auto; }
+      .main { padding: 20px 18px 38px; }
+      .content { margin-top: 38px; }
+      .intro { margin-bottom: 26px; }
+      .footer { margin-top: 36px; }
+    }
+    @media (max-width: 600px) {
+      .work-area { grid-template-columns: 1fr; }
+      textarea { min-height: 190px; }
+      .text-area { min-height: 225px; }
+      .panel-head { gap: 10px; }
+      .panel-tag { font-size: 9px; }
+      .metrics { gap: 7px; }
+      .metric { padding: 9px; }
+      .generator-output { flex-wrap: wrap; }
+      .generator-output input { flex-basis: 100%; }
+      .topbar { align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail" aria-label="Navigation principale">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">T</div><div class="brand-name">tool<span>squid</span></div></div>
+      <div class="rail-label">Tes outils</div>
+      <nav class="nav" aria-label="Outils">
+        <button type="button" data-tool="json" aria-current="page"><span class="nav-index">01</span>Formateur JSON</button>
+        <button type="button" data-tool="text"><span class="nav-index">02</span>Atelier texte</button>
+        <button type="button" data-tool="base64"><span class="nav-index">03</span>Encodeur Base64</button>
+        <button type="button" data-tool="generator"><span class="nav-index">04</span>Générateurs</button>
+        <a href="studio.html"><span class="nav-index">05</span>Studio d'animation</a>
+      </nav>
+      <div class="rail-note"><strong>Simple. Privé. Pratique.</strong>Tes données restent dans ton navigateur. Rien n'est envoyé à un serveur.</div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><div class="crumb">Espace de travail <span aria-hidden="true">/</span> <span id="crumb-current">Formateur JSON</span></div><div class="privacy"><span class="privacy-dot" aria-hidden="true"></span>Traitement local</div></div>
+      <div class="content">
+        <p class="eyebrow">La boîte à outils du quotidien</p>
+        <h1>Moins de friction.<br>Plus de flow.</h1>
+        <p class="intro">Des petits outils bien pratiques, réunis au même endroit. Choisis-en un dans le menu et c'est parti.</p>
+
+        <section class="tool-panel active" id="tool-json" aria-labelledby="json-title">
+          <div class="panel-head"><div><h2 id="json-title">Formateur JSON</h2><p>Vérifie, mets en forme ou compacte un JSON en un instant.</p></div><span class="panel-tag">Données locales</span></div>
+          <div class="work-area">
+            <div class="field"><div class="field-top"><label class="field-label" for="json-input">JSON à traiter</label><span class="field-hint">Colle ton contenu ici</span></div><textarea id="json-input" spellcheck="false" aria-label="JSON à formater">{"name":"ToolSquid","ready":true,"items":[1,2,3]}</textarea><div class="actions"><button class="button primary" id="json-format" type="button">Formater</button><button class="button" id="json-minify" type="button">Compacter</button><button class="button quiet" id="json-clear" type="button">Effacer</button></div><p class="status" id="json-status" aria-live="polite">JSON prêt à être vérifié.</p></div>
+            <div class="field"><div class="field-top"><label class="field-label" for="json-output">Résultat</label><button class="button" type="button" data-copy="json-output">Copier</button></div><textarea id="json-output" readonly spellcheck="false" aria-label="Résultat JSON"></textarea><p class="status" aria-hidden="true">Le résultat s'affiche ici.</p></div>
+          </div>
+        </section>
+
+        <section class="tool-panel" id="tool-text" aria-labelledby="text-title">
+          <div class="panel-head"><div><h2 id="text-title">Atelier texte</h2><p>Compte les mots, ajuste la casse et copie le résultat.</p></div><span class="panel-tag">Instantané</span></div>
+          <div class="single-field field"><div class="field-top"><label class="field-label" for="text-input">Ton texte</label><span class="field-hint">Analyse en direct</span></div><textarea class="text-area" id="text-input" placeholder="Écris ou colle ton texte ici…"></textarea>
+            <div class="metrics" aria-live="polite"><div class="metric"><strong id="word-count">0</strong><span>Mots</span></div><div class="metric"><strong id="char-count">0</strong><span>Caractères</span></div><div class="metric"><strong id="line-count">0</strong><span>Lignes</span></div></div>
+            <div class="actions"><button class="button" type="button" data-case="upper">MAJUSCULES</button><button class="button" type="button" data-case="lower">minuscules</button><button class="button" type="button" data-case="title">Première lettre</button><button class="button" type="button" data-copy="text-input">Copier</button><button class="button quiet" id="text-clear" type="button">Effacer</button></div><p class="status" id="text-status" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section class="tool-panel" id="tool-base64" aria-labelledby="base64-title">
+          <div class="panel-head"><div><h2 id="base64-title">Encodeur Base64</h2><p>Encode ou décode du texte en UTF-8, y compris les accents.</p></div><span class="panel-tag">UTF-8</span></div>
+          <div class="work-area">
+            <div class="field"><div class="field-top"><label class="field-label" for="base64-input">Texte source</label></div><textarea id="base64-input" placeholder="Écris ou colle ton texte ici…" spellcheck="false"></textarea><div class="actions"><button class="button primary" id="base64-encode" type="button">Encoder</button><button class="button" id="base64-decode" type="button">Décoder</button><button class="button quiet" id="base64-clear" type="button">Effacer</button></div><p class="status" id="base64-status" aria-live="polite"></p></div>
+            <div class="field"><div class="field-top"><label class="field-label" for="base64-output">Résultat</label><button class="button" type="button" data-copy="base64-output">Copier</button></div><textarea id="base64-output" readonly spellcheck="false" aria-label="Résultat Base64"></textarea><p class="status" aria-hidden="true">Le résultat s'affiche ici.</p></div>
+          </div>
+        </section>
+
+        <section class="tool-panel" id="tool-generator" aria-labelledby="generator-title">
+          <div class="panel-head"><div><h2 id="generator-title">Générateurs</h2><p>Crée un mot de passe robuste ou un identifiant UUID.</p></div><span class="panel-tag">Aléatoire sécurisé</span></div>
+          <div class="generator field">
+            <div class="generator-switch" role="group" aria-label="Type de génération"><button type="button" data-generator="password" aria-pressed="true">Mot de passe</button><button type="button" data-generator="uuid" aria-pressed="false">UUID v4</button></div>
+            <div id="password-settings">
+              <div class="settings"><span class="setting-label">Longueur</span><label class="length-control"><input id="password-length" type="range" min="8" max="64" value="20"><span class="length-value" id="length-value">20</span></label></div>
+              <div class="settings"><label class="check"><input type="checkbox" id="include-lower" checked> Minuscules</label><label class="check"><input type="checkbox" id="include-upper" checked> Majuscules</label><label class="check"><input type="checkbox" id="include-numbers" checked> Chiffres</label><label class="check"><input type="checkbox" id="include-symbols" checked> Symboles</label></div>
+            </div>
+            <div class="generator-output"><input id="generator-output" type="text" readonly aria-label="Valeur générée" placeholder="Ta valeur apparaîtra ici"><button class="button" type="button" data-copy="generator-output">Copier</button><button class="button primary" id="generate" type="button">Générer</button></div>
+            <p class="status" id="generator-status" aria-live="polite">La génération utilise l'API cryptographique du navigateur.</p>
+          </div>
+        </section>
+      </div>
+      <footer class="footer">ToolSquid <span aria-hidden="true">·</span> Tes outils, sans détour.</footer>
+    </main>
+  </div>
+
+  <script>
+    const navButtons = [...document.querySelectorAll('.nav button')];
+    const panels = [...document.querySelectorAll('.tool-panel')];
+    const toolNames = { json: 'Formateur JSON', text: 'Atelier texte', base64: 'Encodeur Base64', generator: 'Générateurs' };
+
+    navButtons.forEach((button) => button.addEventListener('click', () => {
+      const selected = button.dataset.tool;
+      navButtons.forEach((item) => item.removeAttribute('aria-current'));
+      button.setAttribute('aria-current', 'page');
+      panels.forEach((panel) => panel.classList.toggle('active', panel.id === `tool-${selected}`));
+      document.querySelector('#crumb-current').textContent = toolNames[selected];
+    }));
+
+    const jsonInput = document.querySelector('#json-input');
+    const jsonOutput = document.querySelector('#json-output');
+    const jsonStatus = document.querySelector('#json-status');
+    function processJson(compact) {
+      try {
+        const value = JSON.parse(jsonInput.value);
+        jsonOutput.value = JSON.stringify(value, null, compact ? 0 : 2);
+        jsonStatus.textContent = compact ? 'JSON valide et compacté.' : 'JSON valide et mis en forme.';
+        jsonStatus.classList.remove('error');
+      } catch (error) {
+        jsonStatus.textContent = `JSON invalide : ${error.message}`;
+        jsonStatus.classList.add('error');
+        jsonOutput.value = '';
+      }
+    }
+    document.querySelector('#json-format').addEventListener('click', () => processJson(false));
+    document.querySelector('#json-minify').addEventListener('click', () => processJson(true));
+    document.querySelector('#json-clear').addEventListener('click', () => { jsonInput.value = ''; jsonOutput.value = ''; jsonStatus.textContent = 'Champs effacés.'; jsonStatus.classList.remove('error'); });
+
+    const textInput = document.querySelector('#text-input');
+    function updateTextMetrics() {
+      const text = textInput.value;
+      document.querySelector('#word-count').textContent = (text.trim().match(/\S+/gu) || []).length;
+      document.querySelector('#char-count').textContent = [...text].length;
+      document.querySelector('#line-count').textContent = text.length ? text.split(/\r\n|\r|\n/u).length : 0;
+    }
+    textInput.addEventListener('input', updateTextMetrics);
+    document.querySelectorAll('[data-case]').forEach((button) => button.addEventListener('click', () => {
+      const mode = button.dataset.case;
+      if (mode === 'upper') textInput.value = textInput.value.toLocaleUpperCase('fr');
+      if (mode === 'lower') textInput.value = textInput.value.toLocaleLowerCase('fr');
+      if (mode === 'title') textInput.value = textInput.value.replace(/(^|[.!?]\s+)(\p{L})/gu, (_, prefix, letter) => prefix + letter.toLocaleUpperCase('fr'));
+      updateTextMetrics();
+      document.querySelector('#text-status').textContent = 'Texte mis à jour.';
+    }));
+    document.querySelector('#text-clear').addEventListener('click', () => { textInput.value = ''; updateTextMetrics(); document.querySelector('#text-status').textContent = 'Texte effacé.'; });
+
+    const base64Input = document.querySelector('#base64-input');
+    const base64Output = document.querySelector('#base64-output');
+    const base64Status = document.querySelector('#base64-status');
+    function setBase64Status(message, isError = false) {
+      base64Status.textContent = message;
+      base64Status.classList.toggle('error', isError);
+    }
+    document.querySelector('#base64-encode').addEventListener('click', () => {
+      try {
+        const bytes = new TextEncoder().encode(base64Input.value);
+        let binary = '';
+        bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+        base64Output.value = btoa(binary);
+        setBase64Status('Texte encodé en Base64.');
+      } catch (error) {
+        base64Output.value = '';
+        setBase64Status(`Encodage impossible : ${error.message}`, true);
+      }
+    });
+    document.querySelector('#base64-decode').addEventListener('click', () => {
+      try {
+        const binary = atob(base64Input.value.replace(/\s/gu, ''));
+        const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+        base64Output.value = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        setBase64Status('Base64 décodé en UTF-8.');
+      } catch (error) {
+        base64Output.value = '';
+        setBase64Status(`Base64 invalide ou texte UTF-8 incorrect : ${error.message}`, true);
+      }
+    });
+    document.querySelector('#base64-clear').addEventListener('click', () => { base64Input.value = ''; base64Output.value = ''; setBase64Status('Champs effacés.'); });
+
+    let generatorMode = 'password';
+    const passwordSettings = document.querySelector('#password-settings');
+    const generatorOutput = document.querySelector('#generator-output');
+    const generatorStatus = document.querySelector('#generator-status');
+    const passwordLength = document.querySelector('#password-length');
+    passwordLength.addEventListener('input', () => { document.querySelector('#length-value').textContent = passwordLength.value; });
+    document.querySelectorAll('[data-generator]').forEach((button) => button.addEventListener('click', () => {
+      generatorMode = button.dataset.generator;
+      document.querySelectorAll('[data-generator]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      passwordSettings.hidden = generatorMode !== 'password';
+      generatorOutput.value = '';
+      generatorStatus.textContent = generatorMode === 'password' ? "La génération utilise l'API cryptographique du navigateur." : 'Un nouvel UUID v4 sera créé dans ton navigateur.';
+    }));
+
+    function randomIndex(max) {
+      const limit = 256 - (256 % max);
+      const bytes = new Uint8Array(1);
+      let value;
+      do {
+        crypto.getRandomValues(bytes);
+        value = bytes[0];
+      } while (value >= limit);
+      return value % max;
+    }
+    function generatePassword() {
+      const groups = [];
+      if (document.querySelector('#include-lower').checked) groups.push('abcdefghijklmnopqrstuvwxyz');
+      if (document.querySelector('#include-upper').checked) groups.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      if (document.querySelector('#include-numbers').checked) groups.push('0123456789');
+      if (document.querySelector('#include-symbols').checked) groups.push('!@#$%^&*()-_=+[]{}:,.?');
+      if (!groups.length) throw new Error('Choisis au moins un type de caractère.');
+      const alphabet = [...new Set(groups.join(''))];
+      const chars = groups.map((group) => group[randomIndex(group.length)]);
+      while (chars.length < Number(passwordLength.value)) chars.push(alphabet[randomIndex(alphabet.length)]);
+      for (let index = chars.length - 1; index > 0; index -= 1) {
+        const swapIndex = randomIndex(index + 1);
+        [chars[index], chars[swapIndex]] = [chars[swapIndex], chars[index]];
+      }
+      return chars.join('');
+    }
+    document.querySelector('#generate').addEventListener('click', () => {
+      try {
+        if (!globalThis.crypto?.getRandomValues) throw new Error('API cryptographique indisponible dans ce navigateur.');
+        generatorOutput.value = generatorMode === 'uuid'
+          ? (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/gu, (character) => {
+            const value = randomIndex(16);
+            return (character === 'x' ? value : (value & 0x3) | 0x8).toString(16);
+          }))
+          : generatePassword();
+        generatorStatus.textContent = generatorMode === 'uuid' ? 'UUID v4 généré.' : 'Mot de passe généré avec des valeurs cryptographiques.';
+        generatorStatus.classList.remove('error');
+      } catch (error) {
+        generatorOutput.value = '';
+        generatorStatus.textContent = error.message;
+        generatorStatus.classList.add('error');
+      }
+    });
+
+    async function copyValue(element) {
+      if (!element.value) throw new Error('Rien à copier pour le moment.');
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(element.value);
+        return;
+      }
+      const previousFocus = document.activeElement;
+      element.focus();
+      element.select();
+      const copied = document.execCommand('copy');
+      previousFocus?.focus();
+      if (!copied) throw new Error('Copie indisponible. Sélectionne le texte pour le copier.');
+    }
+    document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
+      const element = document.getElementById(button.dataset.copy);
+      const originalText = button.textContent;
+      try {
+        await copyValue(element);
+        button.textContent = 'Copié !';
+      } catch (error) {
+        const status = button.closest('.field')?.querySelector('.status');
+        if (status) { status.textContent = error.message; status.classList.add('error'); }
+      }
+      window.setTimeout(() => { button.textContent = originalText; }, 1400);
+    }));
+
+    processJson(false);
+  </script>
+</body>
+</html>

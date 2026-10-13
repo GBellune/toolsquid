@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111619">
+  <meta name="description" content="ToolSquid Studio, un atelier de dessin et d’animation image par image.">
+  <title>Studio — ToolSquid</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101416;
+      --panel: #191e21;
+      --panel-raised: #202629;
+      --panel-deep: #14191b;
+      --line: #30383c;
+      --line-light: #3b454a;
+      --text: #e7e9e8;
+      --muted: #8e9a9e;
+      --accent: #72bfd0;
+      --accent-strong: #45a1b5;
+      --warning: #efca7c;
+      --danger: #d97769;
+      --stage: #080b0d;
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { min-width: 340px; min-height: 100vh; margin: 0; overflow: hidden; background: var(--bg); color: var(--text); }
+    button, input, select { font: inherit; color: inherit; }
+    button { border: 0; cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .studio { height: 100dvh; min-height: 560px; display: grid; grid-template-rows: 48px minmax(180px, 1fr) 188px 28px; }
+    .topbar { display: flex; align-items: center; gap: 5px; padding: 0 12px; border-bottom: 1px solid var(--line); background: #14191b; }
+    .brand { display: flex; align-items: center; gap: 8px; margin-right: 12px; color: var(--text); font-size: 14px; font-weight: 750; text-decoration: none; white-space: nowrap; }
+    .brand-mark { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 7px 7px 7px 2px; background: var(--accent); color: #101416; font-size: 14px; }
+    .top-button { min-height: 31px; padding: 0 10px; border-radius: 4px; background: transparent; color: #bac2c4; font-size: 11px; }
+    .top-button:hover, .icon-button:hover { background: #2a3337; color: white; }
+    .project-name { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .save-state { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #70c292; }
+    .top-spacer { flex: 1; }
+    .play-button { width: 30px; height: 30px; border-radius: 4px; background: transparent; color: var(--text); font-size: 13px; }
+    .frame-range { width: clamp(65px, 12vw, 150px); accent-color: var(--accent); }
+    .fps-label { color: var(--muted); font-size: 10px; }
+    .top-divider { width: 1px; height: 20px; margin: 0 7px; background: var(--line); }
+    .workspace { display: grid; grid-template-columns: 48px minmax(0, 1fr) 205px; min-height: 0; }
+    .toolbar { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 5px; border-right: 1px solid var(--line); background: #171c1f; }
+    .tool-button, .icon-button { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 4px; background: transparent; color: #acb6b9; font-size: 16px; }
+    .tool-button[aria-pressed="true"] { background: #26505a; color: #d9f7fc; box-shadow: inset 0 0 0 1px #3c7886; }
+    .tool-divider { width: 22px; height: 1px; flex: none; margin: 3px 0; background: var(--line); }
+    .stage { position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; overflow: hidden; padding: 26px; background-color: var(--stage); background-image: radial-gradient(#293033 .65px, transparent .65px); background-size: 18px 18px; }
+    .canvas-wrap { position: relative; display: grid; place-items: center; max-width: 100%; max-height: 100%; box-shadow: 0 12px 38px #0008, 0 0 0 1px #ffffff20; }
+    #drawing-canvas { display: block; max-width: min(100%, calc(100vw - 300px)); max-height: calc(100dvh - 300px); background: #edf0f4; touch-action: none; cursor: crosshair; }
+    .stage-help { position: absolute; bottom: 11px; left: 13px; color: #9ca8ab; font-size: 10px; pointer-events: none; }
+    .rightbar { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); background: #171c1f; }
+    .rightbar-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+    .rightbar-tabs button { min-height: 40px; background: transparent; color: var(--muted); font-size: 11px; }
+    .rightbar-tabs button[aria-selected="true"] { border-bottom: 2px solid var(--accent); color: var(--text); }
+    .side-content { display: none; min-height: 0; overflow: auto; padding: 11px; }
+    .side-content.active { display: block; }
+    .side-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; color: #c3cbcd; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .layer-list { display: grid; gap: 5px; }
+    .layer-row { min-height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 5px; border: 1px solid transparent; border-radius: 4px; background: #202629; color: #c4ccce; font-size: 10px; }
+    .layer-row.active { border-color: #427785; background: #233b40; }
+    .layer-select { min-width: 0; flex: 1; overflow: hidden; background: transparent; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+    .layer-visible { width: 24px; height: 26px; border-radius: 3px; background: transparent; color: var(--muted); }
+    .layer-visible[aria-pressed="true"] { color: var(--accent); }
+    .layer-opacity { width: 100%; margin: 8px 0 12px; accent-color: var(--accent); }
+    .property-label { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+    .color-input { width: 27px; height: 24px; padding: 2px; border: 1px solid var(--line-light); border-radius: 4px; background: var(--panel-raised); }
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+    .swatch { width: 22px; height: 22px; border: 2px solid #ffffff20; border-radius: 50%; }
+    .swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .property-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0; color: var(--muted); font-size: 10px; }
+    .property-row input[type="range"] { width: 100px; accent-color: var(--accent); }
+    .timeline { display: grid; grid-template-rows: 36px minmax(0, 1fr); min-height: 0; border-top: 1px solid var(--line); background: #171c1f; }
+    .timeline-top { display: flex; align-items: center; gap: 8px; padding: 0 11px; border-bottom: 1px solid var(--line); }
+    .timeline-tabs { display: flex; gap: 3px; }
+    .timeline-tabs button { min-height: 27px; padding: 0 9px; border-radius: 3px; background: transparent; color: var(--muted); font-size: 10px; }
+    .timeline-tabs button[aria-selected="true"] { background: #273034; color: var(--text); }
+    .timeline-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+    .small-button { min-height: 25px; padding: 0 8px; border: 1px solid var(--line); border-radius: 3px; background: #22292c; color: #c3cbcd; font-size: 10px; }
+    .small-button:hover { border-color: var(--line-light); background: #2b3337; }
+    .timeline-body { min-width: 0; display: grid; grid-template-columns: 154px minmax(0, 1fr); overflow: auto; }
+    .timeline-layer-names { display: grid; align-content: start; gap: 4px; padding: 21px 7px 7px; border-right: 1px solid var(--line); }
+    .timeline-layer-name { height: 41px; display: flex; align-items: center; gap: 6px; padding: 0 7px; border-radius: 3px; background: #202629; color: #b8c1c3; font-size: 10px; }
+    .timeline-layer-name.active { background: #263a3e; color: #e0f5f8; }
+    .timeline-grid { min-width: 0; overflow-x: auto; padding: 0 8px 8px; }
+    .frames { display: flex; align-items: flex-start; gap: 5px; min-height: 100%; padding-top: 20px; }
+    .frame-cell { position: relative; width: 53px; height: 48px; flex: none; display: grid; grid-template-rows: 13px 1fr; gap: 3px; padding: 2px; border: 1px solid #353e42; border-radius: 3px; background: #202629; color: #9da8ab; }
+    .frame-cell[aria-current="true"] { border-color: var(--accent); background: #24383d; color: #dff8fb; }
+    .frame-cell span { font-size: 9px; text-align: center; }
+    .frame-thumb { width: 100%; height: 27px; object-fit: contain; background: #dfe4e8; }
+    .frame-end { width: 7px; height: 6px; position: absolute; right: -4px; bottom: -3px; border-radius: 50%; background: var(--accent); }
+    .statusbar { display: flex; align-items: center; gap: 14px; padding: 0 11px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .status-message { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .modal-backdrop { position: fixed; z-index: 10; inset: 0; display: none; place-items: center; padding: 20px; background: #050708c9; backdrop-filter: blur(7px); }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(560px, 100%); max-height: min(760px, 92dvh); overflow: auto; border: 1px solid #3a4549; border-radius: 7px; background: #191e21; box-shadow: 0 25px 100px #000a; }
+    .modal.settings-modal { width: min(780px, 100%); }
+    .settings-layout { min-height: 410px; display: grid; grid-template-columns: 150px minmax(0, 1fr); }
+    .settings-nav { display: grid; align-content: start; gap: 4px; padding: 12px 9px; border-right: 1px solid var(--line); background: #151a1c; }
+    .settings-nav button { min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 9px; border-radius: 4px; background: transparent; color: #aab4b7; text-align: left; font-size: 10px; }
+    .settings-nav button[aria-current="page"] { background: #315b64; color: white; }
+    .settings-content { display: none; align-content: start; gap: 12px; padding: 16px; }
+    .settings-content.active { display: grid; }
+    .settings-section { padding: 11px 12px; border: 1px solid #2d363a; border-radius: 5px; background: #151a1c; }
+    .settings-section h3 { margin: 0 0 8px; color: #bbc4c6; font-size: 10px; font-weight: 700; }
+    .setting-row { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #293134; color: #d1d6d7; font-size: 10px; }
+    .setting-row:last-child { border-bottom: 0; }
+    .setting-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .setting-row select, .setting-row input[type="number"] { max-width: 180px; min-height: 26px; padding: 0 7px; border: 1px solid #394448; border-radius: 3px; background: #202629; color: var(--text); font-size: 9px; }
+    .setting-row input[type="checkbox"] { width: 28px; height: 16px; flex: none; accent-color: var(--accent-strong); }
+    .setting-row select { min-width: 120px; }
+    .setting-row kbd { color: #b5c0c2; font: 9px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .stage.grid-hidden { background-image: none; }
+    #drawing-canvas { transform-origin: center; }
+    .settings-description { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+    .modal-header h2 { margin: 0; font-size: 15px; font-weight: 650; }
+    .modal-body { padding: 17px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 17px; border-top: 1px solid var(--line); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .form-field { display: grid; gap: 5px; min-width: 0; color: #aeb8bb; font-size: 10px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field input, .form-field select { width: 100%; min-height: 34px; padding: 0 9px; border: 1px solid #3b454a; border-radius: 4px; background: #111719; font-size: 12px; }
+    .workflow-select { display: flex; gap: 4px; padding: 3px; border-radius: 4px; background: #111719; }
+    .workflow-select button { min-height: 29px; flex: 1; border-radius: 3px; background: transparent; color: var(--muted); font-size: 10px; }
+    .workflow-select button[aria-pressed="true"] { background: #343d42; color: var(--text); }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 13px 0 3px; }
+    .preset { min-height: 25px; padding: 0 8px; border: 1px solid var(--line); border-radius: 3px; background: #22292c; color: #c0c9cb; font-size: 9px; }
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 11px; }
+    .project-card { min-width: 0; overflow: hidden; border: 1px solid #384246; border-radius: 5px; background: #121719; text-align: left; }
+    .project-preview { width: 100%; aspect-ratio: 16 / 10; display: block; object-fit: contain; background: #dfe4e8; }
+    .project-card-info { display: grid; gap: 4px; padding: 9px; }
+    .project-card-info strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .project-card-info span { color: var(--muted); font-size: 9px; }
+    .project-card-controls { display: flex; gap: 5px; padding: 0 8px 8px; }
+    .project-card-controls button { min-height: 24px; padding: 0 7px; border-radius: 3px; background: #293235; color: #cbd1d2; font-size: 9px; }
+    .project-empty { grid-column: 1 / -1; padding: 22px 8px; color: var(--muted); font-size: 11px; text-align: center; }
+    .asset-list { display: grid; gap: 7px; }
+    .asset-item { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; color: #c8d0d2; font-size: 10px; }
+    .asset-item img { width: 46px; height: 36px; object-fit: contain; background: #e5e8eb; }
+    .export-options { display: grid; gap: 9px; }
+    .export-option { display: grid; grid-template-columns: 18px 1fr; align-items: start; gap: 8px; color: #ccd2d3; font-size: 11px; }
+    .export-option small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .primary-button { min-height: 34px; padding: 0 14px; border-radius: 4px; background: #317d8c; color: white; font-size: 11px; }
+    .primary-button:hover { background: #3c92a2; }
+    .notice { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .toast { position: fixed; z-index: 20; right: 14px; bottom: 42px; max-width: min(400px, calc(100vw - 28px)); padding: 10px 13px; transform: translateY(8px); opacity: 0; border: 1px solid var(--line-light); border-radius: 4px; background: #252d30; box-shadow: 0 8px 30px #0008; color: var(--text); font-size: 11px; pointer-events: none; transition: opacity .16s, transform .16s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .hidden { display: none !important; }
+    @media (min-width: 1500px) { .workspace { grid-template-columns: 52px minmax(0, 1fr) 230px; } }
+    @media (max-width: 820px) {
+      body { overflow: auto; }
+      .studio { min-height: 690px; height: 100dvh; grid-template-rows: 46px minmax(270px, 1fr) 180px 28px; }
+      .topbar { padding: 0 6px; gap: 1px; }
+      .brand { margin-right: 2px; }
+      .top-button { padding: 0 6px; font-size: 10px; }
+      .save-state { display: none; }
+      .workspace { grid-template-columns: 42px minmax(0, 1fr); }
+      .rightbar { position: absolute; z-index: 3; top: 47px; right: 0; bottom: 208px; width: min(205px, 48vw); border-left: 1px solid var(--line); box-shadow: -10px 0 28px #0005; }
+      #drawing-canvas { max-width: calc(100vw - 64px); max-height: calc(100dvh - 365px); }
+      .stage { padding: 13px 43px 23px 10px; }
+      .timeline-body { grid-template-columns: 90px minmax(0, 1fr); }
+      .timeline-layer-name { font-size: 9px; }
+      .timeline-actions .small-button:nth-child(2) { display: none; }
+    }
+    @media (max-width: 520px) {
+      .brand-name { display: none; }
+      .topbar { gap: 0; }
+      .project-name { max-width: 82px; }
+      .top-divider { margin: 0 3px; }
+      .frame-range { width: 54px; }
+      .fps-label { display: none; }
+      .timeline-top { padding: 0 5px; }
+      .timeline-tabs button { padding: 0 6px; }
+      .timeline-actions .small-button { padding: 0 5px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-field.full { grid-column: auto; }
+      .stage-help { display: none; }
+      .settings-layout { grid-template-columns: 112px minmax(0, 1fr); }
+      .settings-nav { padding: 9px 5px; }
+      .settings-nav button { gap: 5px; padding: 0 5px; font-size: 9px; }
+      .settings-content { padding: 9px; }
+      .settings-section { padding: 8px; }
+      .setting-row { gap: 5px; font-size: 9px; }
+      .setting-row select { min-width: 85px; max-width: 110px; }
+    }
+    html[data-theme="light"] { color-scheme: light; --bg: #e9edef; --panel: #f4f6f7; --panel-raised: #e3e8ea; --panel-deep: #edf0f1; --line: #c8d0d2; --line-light: #b7c1c4; --text: #1d292d; --muted: #617075; --stage: #cdd4d7; }
+    html[data-theme="light"] .topbar,
+    html[data-theme="light"] .toolbar,
+    html[data-theme="light"] .rightbar,
+    html[data-theme="light"] .timeline,
+    html[data-theme="light"] .modal,
+    html[data-theme="light"] .timeline-top { background-color: #f2f5f5; }
+    html[data-theme="light"] .settings-nav,
+    html[data-theme="light"] .settings-section,
+    html[data-theme="light"] .project-card,
+    html[data-theme="light"] .frame-cell,
+    html[data-theme="light"] .timeline-layer-name { background-color: #e7ecee; }
+    html[data-theme="light"] .stage { background-color: var(--stage); background-image: radial-gradient(#aab5b9 .65px, transparent .65px); }
+    html[data-theme="light"] .modal-header,
+    html[data-theme="light"] .modal-footer,
+    html[data-theme="light"] .timeline-body,
+    html[data-theme="light"] .timeline-layer-names,
+    html[data-theme="light"] .rightbar-tabs { border-color: var(--line); }
+    html[data-theme="light"] .form-field input,
+    html[data-theme="light"] .form-field select,
+    html[data-theme="light"] .setting-row select,
+    html[data-theme="light"] .setting-row input[type="number"] { border-color: var(--line); background: #fff; color: var(--text); }
+    html[data-theme="light"] .workflow-select,
+    html[data-theme="light"] .small-button,
+    html[data-theme="light"] .generator-switch button { border-color: var(--line); background: #e7ecee; color: var(--text); }
+    html[data-theme="light"] .layer-row,
+    html[data-theme="light"] .settings-content .setting-row,
+    html[data-theme="light"] .asset-item { background-color: #e7ecee; color: var(--text); }
+    html[data-theme="light"] .tool-button,
+    html[data-theme="light"] .top-button,
+    html[data-theme="light"] .play-button,
+    html[data-theme="light"] .icon-button,
+    html[data-theme="light"] .setting-row,
+    html[data-theme="light"] .settings-nav button { color: var(--text); }
+    html[data-theme="light"] .tool-button[aria-pressed="true"],
+    html[data-theme="light"] .settings-nav button[aria-current="page"] { background: #cbe4e9; color: #155566; }
+    html[data-theme="light"] .frame-cell[aria-current="true"] { background: #d8ebef; color: #155566; }
+    html[data-theme="light"] .side-content.active,
+    html[data-theme="light"] .layer-select { color: var(--text); }
+    html[data-theme="light"] .toast { border-color: var(--line); background: #f2f5f5; color: var(--text); }
+    html[data-theme="light"] .save-dot { background: #328c58; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Retour à ToolSquid"><span class="brand-mark">T</span><span class="brand-name">tool<span style="color:var(--accent)">squid</span></span></a>
+      <button class="top-button" id="projects-button" type="button">Projets</button>
+      <button class="top-button" id="library-button" type="button">Bibliothèque</button>
+      <button class="top-button" id="actions-button" type="button">Actions</button>
+      <span class="top-divider"></span>
+      <button class="top-button project-name" id="project-name-button" type="button" title="Renommer le projet">Mon animation</button>
+      <span class="save-state" id="save-state"><span class="save-dot"></span>Enregistré</span>
+      <span class="top-spacer"></span>
+      <button class="play-button" id="previous-frame" type="button" title="Image précédente" aria-label="Image précédente">|◀</button>
+      <button class="play-button" id="play-button" type="button" title="Lire ou mettre en pause (Espace)" aria-label="Lire l’animation">▶</button>
+      <button class="play-button" id="next-frame" type="button" title="Image suivante" aria-label="Image suivante">▶|</button>
+      <input class="frame-range" id="frame-range" type="range" min="1" max="1" value="1" aria-label="Image courante">
+      <span class="fps-label" id="fps-label">24 i/s</span>
+      <span class="top-divider"></span>
+      <button class="icon-button" id="export-button" type="button" title="Exporter" aria-label="Exporter">⇧</button>
+    </header>
+
+    <main class="workspace">
+      <nav class="toolbar" aria-label="Outils de dessin">
+        <button class="tool-button" type="button" data-tool="select" aria-pressed="false" title="Sélectionner (V)">↖</button>
+        <button class="tool-button" type="button" data-tool="rectangle" aria-pressed="false" title="Rectangle (M)">▱</button>
+        <button class="tool-button" type="button" data-tool="brush" aria-pressed="true" title="Pinceau (B)">✎</button>
+        <button class="tool-button" type="button" data-tool="eraser" aria-pressed="false" title="Gomme (E)">⌫</button>
+        <button class="tool-button" type="button" data-tool="fill" aria-pressed="false" title="Fond (G)">◉</button>
+        <button class="tool-button" type="button" data-tool="eyedropper" aria-pressed="false" title="Pipette (I)">⌾</button>
+        <button class="tool-button" type="button" data-tool="text" aria-pressed="false" title="Texte (T)">T</button>
+        <span class="tool-divider"></span>
+        <button class="tool-button" id="undo-button" type="button" title="Annuler (Ctrl+Z)" aria-label="Annuler">↶</button>
+        <button class="tool-button" id="redo-button" type="button" title="Rétablir (Ctrl+Maj+Z)" aria-label="Rétablir">↷</button>
+        <span class="top-spacer"></span>
+        <label class="tool-button" for="image-import" title="Importer une image" aria-label="Importer une image">▧</label>
+        <input class="hidden" id="image-import" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+      </nav>
+
+      <section class="stage" aria-label="Zone de dessin">
+        <div class="canvas-wrap"><canvas id="drawing-canvas" width="1920" height="1080" aria-label="Toile d’animation"></canvas></div>
+        <div class="stage-help">Espace pour lire · Ctrl+Z pour annuler · B pinceau · E gomme</div>
+      </section>
+
+      <aside class="rightbar" aria-label="Réglages et calques">
+        <div class="rightbar-tabs" role="tablist"><button id="layers-tab" type="button" role="tab" aria-selected="true">Calques</button><button id="properties-tab" type="button" role="tab" aria-selected="false">Outil</button></div>
+        <div class="side-content active" id="layers-panel">
+          <div class="side-heading"><span>Calques</span><span><button class="small-button" id="delete-layer" type="button" aria-label="Supprimer le calque actif">−</button> <button class="small-button" id="add-layer" type="button" aria-label="Ajouter un calque">+</button></span></div>
+          <div class="layer-list" id="layer-list"></div>
+          <div class="property-row"><span>Opacité</span><span id="opacity-value">100%</span></div>
+          <input class="layer-opacity" id="layer-opacity" type="range" min="0" max="100" value="100" aria-label="Opacité du calque">
+          <div class="side-heading"><span>Fond de la toile</span><input class="color-input" id="background-color" type="color" value="#edf0f4" aria-label="Couleur de fond"></div>
+        </div>
+        <div class="side-content" id="properties-panel">
+          <div class="side-heading"><span>Couleur</span><input class="color-input" id="brush-color" type="color" value="#22252a" aria-label="Couleur du pinceau"></div>
+          <div class="swatch-row" id="swatches">
+            <button class="swatch" type="button" data-color="#22252a" style="background:#22252a" aria-label="Charbon" aria-pressed="true"></button>
+            <button class="swatch" type="button" data-color="#d65350" style="background:#d65350" aria-label="Rouge" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#e69a42" style="background:#e69a42" aria-label="Orange" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#e8d35b" style="background:#e8d35b" aria-label="Jaune" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#69a879" style="background:#69a879" aria-label="Vert" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#5486c1" style="background:#5486c1" aria-label="Bleu" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#996ab2" style="background:#996ab2" aria-label="Violet" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="#f7f7f4" style="background:#f7f7f4" aria-label="Blanc" aria-pressed="false"></button>
+          </div>
+          <label class="property-row" for="brush-size"><span>Taille</span><span id="brush-size-value">28 px</span></label>
+          <input id="brush-size" type="range" min="2" max="120" value="28" style="width:100%;accent-color:var(--accent)" aria-label="Taille du pinceau">
+          <p class="notice">Choisis une couleur, puis dessine sur la toile. L’opacité du calque s’ajuste dans l’onglet Calques.</p>
+        </div>
+      </aside>
+    </main>
+
+    <section class="timeline" aria-label="Timeline">
+      <div class="timeline-top">
+        <div class="timeline-tabs" role="tablist"><button type="button" data-timeline="frames" aria-selected="true">Images</button><button type="button" data-timeline="audio" aria-selected="false">Audio</button></div>
+        <span class="fps-label" id="frame-count-label">1 image</span>
+        <div class="timeline-actions"><button class="small-button" id="add-frame" type="button">+ Image</button><button class="small-button" id="duplicate-frame" type="button">Dupliquer</button><button class="small-button" id="delete-frame" type="button">Supprimer</button></div>
+      </div>
+      <div class="timeline-body" id="frames-view"><div class="timeline-layer-names" id="timeline-layer-names"></div><div class="timeline-grid"><div class="frames" id="frames"></div></div></div>
+      <div class="timeline-body hidden" id="audio-view"><div class="timeline-layer-names"><div class="timeline-layer-name">♫ Audio</div></div><div class="timeline-grid"><div class="asset-list" id="audio-assets"><span class="notice">Importe un fichier audio depuis la bibliothèque.</span></div></div></div>
+    </section>
+
+    <footer class="statusbar"><span id="dimensions-label">1920 × 1080</span><span id="active-frame-label">Image 1 / 1</span><span class="status-message" id="status-message" aria-live="polite">Prêt</span><button class="top-button" id="settings-button" type="button">Réglages</button></footer>
+  </div>
+
+  <div class="modal-backdrop" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+    <div class="modal"><div class="modal-header"><h2 id="project-modal-title">Nouveau projet</h2><button class="icon-button" type="button" data-close="project-modal" aria-label="Fermer">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <label class="form-field full">Nom du projet<input id="new-name" maxlength="60" value="Mon animation"></label>
+        <label class="form-field">Largeur<input id="new-width" type="number" min="16" max="3840" value="1920"></label><label class="form-field">Hauteur<input id="new-height" type="number" min="16" max="2160" value="1080"></label>
+        <label class="form-field full">Images par seconde<select id="new-fps"><option value="12">12 i/s</option><option value="24" selected>24 i/s</option><option value="30">30 i/s</option><option value="60">60 i/s</option></select></label>
+        <div class="form-field full">Mode de travail<div class="workflow-select"><button type="button" data-workflow="drawings" aria-pressed="true">Image par image</button><button type="button" data-workflow="keyframes" aria-pressed="false">Images clés</button></div></div>
+      </div><div class="presets"><button class="preset" type="button" data-size="1920,1080">1920 × 1080 · 24 i/s</button><button class="preset" type="button" data-size="3840,2160">3840 × 2160 · 24 i/s</button><button class="preset" type="button" data-size="1280,720">1280 × 720 · 24 i/s</button><button class="preset" type="button" data-size="2048,2048">2048 × 2048 · 24 i/s</button></div>
+      <p class="notice">Les projets sont enregistrés sur cet appareil. Les très grandes toiles peuvent ralentir les appareils modestes.</p></div>
+      <div class="modal-footer"><button class="small-button" type="button" data-close="project-modal">Annuler</button><button class="primary-button" id="create-project" type="button">Créer le projet</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="projects-modal" role="dialog" aria-modal="true" aria-labelledby="projects-title"><div class="modal"><div class="modal-header"><h2 id="projects-title">Projets</h2><button class="icon-button" type="button" data-close="projects-modal" aria-label="Fermer">×</button></div><div class="modal-body"><div class="project-grid" id="project-grid"></div></div><div class="modal-footer"><button class="small-button" id="import-project" type="button">Ouvrir un projet</button><button class="primary-button" id="new-project-button" type="button">+ Nouveau projet</button><input class="hidden" id="project-file" type="file" accept="application/json,.json"></div></div></div>
+
+  <div class="modal-backdrop" id="library-modal" role="dialog" aria-modal="true" aria-labelledby="library-title"><div class="modal"><div class="modal-header"><h2 id="library-title">Bibliothèque</h2><button class="icon-button" type="button" data-close="library-modal" aria-label="Fermer">×</button></div><div class="modal-body"><div class="actions" style="margin:0 0 13px"><button class="small-button" id="library-image-import" type="button">+ Importer une image</button><button class="small-button" id="library-audio-import" type="button">+ Importer un son</button><input class="hidden" id="audio-import" type="file" accept="audio/*"></div><div class="asset-list" id="library-assets"></div><p class="notice">Les images peuvent être ajoutées comme nouveaux calques. Les fichiers audio sont disponibles en écoute dans la timeline.</p></div></div></div>
+
+  <div class="modal-backdrop" id="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title"><div class="modal"><div class="modal-header"><h2 id="export-title">Exporter</h2><button class="icon-button" type="button" data-close="export-modal" aria-label="Fermer">×</button></div><div class="modal-body"><div class="export-options">
+    <label class="export-option"><input type="radio" name="export-kind" value="png" checked><span>Image PNG<small>Exporte l’image sélectionnée à la résolution du projet.</small></span></label>
+    <label class="export-option"><input type="radio" name="export-kind" value="webm"><span>Animation WebM<small>Vidéo animée avec le son importé si le navigateur le prend en charge.</small></span></label>
+    <label class="export-option"><input type="radio" name="export-kind" value="project"><span>Projet ToolSquid (.json)<small>Projet réouvrable, avec calques, images et réglages.</small></span></label>
+  </div><p class="notice" id="export-notice">Pour les animations GIF ou les séquences d’images, exporte le projet et convertis-le dans un outil dédié.</p></div><div class="modal-footer"><button class="small-button" type="button" data-close="export-modal">Annuler</button><button class="primary-button" id="confirm-export" type="button">Exporter</button></div></div></div>
+
+  <div class="modal-backdrop" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal settings-modal"><div class="modal-header"><h2 id="settings-title">Réglages</h2><button class="icon-button" type="button" data-close="settings-modal" aria-label="Fermer">×</button></div>
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Catégories des réglages">
+          <button type="button" data-settings-tab="general" aria-current="page">Général</button>
+          <button type="button" data-settings-tab="appearance">Apparence</button>
+          <button type="button" data-settings-tab="gestures">Gestes</button>
+          <button type="button" data-settings-tab="keyboard">Clavier</button>
+          <button type="button" data-settings-tab="backup">Sauvegarde</button>
+          <button type="button" data-settings-tab="info">À propos</button>
+        </nav>
+        <section class="settings-content active" data-settings-panel="general" aria-label="Réglages généraux">
+          <div class="settings-section"><h3>Projet courant</h3><div class="setting-row"><span>Nom</span><input id="settings-name" maxlength="60" aria-label="Nom du projet"></div><div class="setting-row"><span>Images par seconde</span><select id="settings-fps"><option value="12">12 i/s</option><option value="24">24 i/s</option><option value="30">30 i/s</option><option value="60">60 i/s</option></select></div><button class="small-button" id="rename-project" type="button" style="margin-top:8px">Appliquer</button></div>
+          <div class="settings-section"><h3>Lecture et timeline</h3>
+            <label class="setting-row"><span>Réinitialiser l’image après la lecture</span><input type="checkbox" id="setting-reset-frame" checked></label>
+            <label class="setting-row"><span>Durée par défaut d’une image <small>Nombre d’images jouées avant la suivante</small></span><select id="setting-frame-duration"><option value="1">1 image</option><option value="2">2 images</option><option value="3">3 images</option><option value="6">6 images</option><option value="12">12 images</option></select></label>
+            <div class="setting-row"><span>Début des nouveaux dessins</span><select id="setting-insert-position" aria-label="Position des nouvelles images"><option value="current">Image courante</option><option value="first">Début de la timeline</option></select></div>
+            <div class="setting-row"><span>Navigation précédente / suivante</span><select id="setting-navigation-mode" aria-label="Mode de navigation"><option value="frames">Images</option><option value="drawings">Dessins non vides</option></select></div>
+            <label class="setting-row"><span>Afficher les calques dans la timeline</span><select id="setting-layer-scope" aria-label="Calques affichés"><option value="all">Tous les calques</option><option value="selected">Calque sélectionné</option></select></label>
+          </div>
+          <div class="settings-section"><h3>Calques et dessin</h3>
+            <label class="setting-row"><span>Activer l’édition du pivot du calque</span><input type="checkbox" id="setting-pivot"></label>
+            <label class="setting-row"><span>Suppression rapide</span><select id="setting-delete-scope" aria-label="Portée de la suppression"><option value="current">Calque actif</option><option value="same-name">Même calque dans toutes les images</option></select></label>
+            <label class="setting-row"><span>Afficher l’image précédente en transparence</span><input type="checkbox" id="setting-onion"></label>
+          </div>
+          <div class="settings-section"><h3>Disponibilité</h3>
+            <div class="setting-row"><span>Suivre la caméra pendant la lecture<small>Disponible lorsque le calque Caméra sera ajouté.</small></span><input type="checkbox" disabled aria-label="Fonction caméra non disponible"></div>
+            <div class="setting-row"><span>Lire l’audio pendant le scrubbing<small>Les pistes audio ne sont pas encore synchronisées aux images.</small></span><input type="checkbox" disabled aria-label="Synchronisation audio non disponible"></div>
+          </div>
+        </section>
+        <section class="settings-content" data-settings-panel="appearance" aria-label="Réglages d’apparence">
+          <div class="settings-section"><h3>Interface</h3><div class="setting-row"><span>Thème</span><select id="setting-theme"><option value="dark">Sombre</option><option value="light">Clair</option></select></div><label class="setting-row"><span>Texture autour de la toile</span><input type="checkbox" id="setting-stage-grid" checked></label></div>
+          <div class="settings-section"><h3>Toile</h3><div class="setting-row"><span>Couleur de fond</span><input class="color-input" id="settings-background-color" type="color" value="#edf0f4" aria-label="Couleur de fond de la toile"></div><label class="setting-row"><span>Afficher l’image précédente en transparence</span><input type="checkbox" id="setting-onion-appearance"></label></div>
+          <p class="settings-description">Les réglages d’apparence sont conservés sur cet appareil.</p>
+        </section>
+        <section class="settings-content" data-settings-panel="gestures" aria-label="Réglages des gestes">
+          <div class="settings-section"><h3>Pavé tactile et souris</h3><label class="setting-row"><span>Zoomer avec la molette sur la toile</span><input type="checkbox" id="setting-wheel-zoom" checked></label><label class="setting-row"><span>Inverser le sens du zoom</span><input type="checkbox" id="setting-invert-zoom"></label><p class="settings-description">La molette ajuste le zoom lorsque le pointeur est au-dessus de la toile.</p></div>
+          <div class="settings-section"><h3>Écran tactile</h3><p class="settings-description">Le dessin au stylet et au doigt est activé. Le pincement à deux doigts pour zoomer n’est pas encore disponible.</p></div>
+        </section>
+        <section class="settings-content" data-settings-panel="keyboard" aria-label="Réglages clavier">
+          <div class="settings-section"><h3>Raccourcis</h3><label class="setting-row"><span>Activer les raccourcis clavier</span><input type="checkbox" id="setting-shortcuts" checked></label>
+            <div class="setting-row"><span>Pinceau</span><kbd>B</kbd></div><div class="setting-row"><span>Gomme</span><kbd>E</kbd></div><div class="setting-row"><span>Rectangle</span><kbd>M</kbd></div><div class="setting-row"><span>Sélection</span><kbd>V</kbd></div><div class="setting-row"><span>Annuler / rétablir</span><kbd>Ctrl+Z / Ctrl+Maj+Z</kbd></div><div class="setting-row"><span>Lire / pause</span><kbd>Espace</kbd></div><div class="setting-row"><span>Image suivante / précédente</span><kbd>← / →</kbd></div>
+          </div><p class="settings-description">La personnalisation des raccourcis clavier n’est pas encore disponible.</p>
+        </section>
+        <section class="settings-content" data-settings-panel="backup" aria-label="Sauvegarde des projets">
+          <div class="settings-section"><h3>Sauvegarde locale</h3><p class="settings-description">Les projets sont conservés dans le stockage de ce navigateur. Télécharge un fichier projet pour en garder une copie externe.</p><div class="actions"><button class="small-button" id="save-project-file" type="button">Télécharger ce projet</button><button class="small-button" id="backup-all-projects" type="button">Exporter tous les projets</button><button class="small-button" id="import-backup" type="button">Importer un projet</button><input class="hidden" id="backup-file" type="file" accept="application/json,.json"></div></div>
+          <div class="settings-section"><h3>Stockage</h3><div class="setting-row"><span>Nombre de projets enregistrés</span><strong id="backup-project-count">0</strong></div><button class="small-button" id="clear-projects" type="button" style="margin-top:9px;color:#f19b8d">Supprimer tous les projets de cet appareil</button></div>
+        </section>
+        <section class="settings-content" data-settings-panel="info" aria-label="À propos de ToolSquid Studio">
+          <div class="settings-section"><h3>ToolSquid Studio</h3><p class="settings-description">Atelier de dessin et d’animation image par image. Version 0.2.<br><br>Les dessins et réglages restent sur ton appareil. WebM est pris en charge selon le navigateur. L’export GIF n’est pas encore intégré.</p></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'toolsquid.studio.projects.v1';
+      const ACTIVE_KEY = 'toolsquid.studio.active.v1';
+      const PREFERENCES_KEY = 'toolsquid.studio.preferences.v1';
+      const MAX_HISTORY = 30;
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const DEFAULT_PREFERENCES = { resetAfterPlayback: true, frameDuration: 1, insertPosition: 'current', navigationMode: 'frames', layerScope: 'all', deleteScope: 'current', pivotEditing: false, onionSkin: false, theme: 'dark', stageGrid: true, wheelZoom: true, invertZoom: false, shortcuts: true };
+      function loadPreferences() {
+        try { return { ...DEFAULT_PREFERENCES, ...JSON.parse(localStorage.getItem(PREFERENCES_KEY) || '{}') }; }
+        catch { return { ...DEFAULT_PREFERENCES }; }
+      }
+      const canvas = $('#drawing-canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const colorInput = $('#brush-color');
+      const state = { projects: [], project: null, frame: 0, layer: null, tool: 'brush', color: colorInput.value, size: 28, zoom: 1, playing: false, playStart: 0, playTimer: null, drawing: null, history: [], future: [], workflow: 'drawings', assets: [], preferences: loadPreferences(), toastTimer: null, saveTimer: null };
+
+      function makeLayer(name = 'Calque 1') {
+        return { id: crypto.randomUUID(), name, visible: true, opacity: 1, strokes: [] };
+      }
+      function makeFrame(duration = Number(state.preferences.frameDuration) || 1) { return { id: crypto.randomUUID(), duration, layers: [makeLayer()] }; }
+      function makeProject(name, width, height, fps, workflow = 'drawings') {
+        const project = { version: 1, id: crypto.randomUUID(), name: name.trim() || 'Sans titre', width, height, fps, workflow, background: '#edf0f4', frames: [makeFrame()], updated: Date.now() };
+        return project;
+      }
+      function safeReadProjects() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          return Array.isArray(parsed) ? parsed.filter((project) => project && project.version === 1 && Array.isArray(project.frames) && project.frames.length && Number.isInteger(project.width) && Number.isInteger(project.height)) : [];
+        } catch { return []; }
+      }
+      function toast(message, duration = 2300) {
+        const el = $('#toast');
+        el.textContent = message;
+        el.classList.add('show');
+        clearTimeout(state.toastTimer);
+        state.toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+        $('#status-message').textContent = message;
+      }
+      function saveProjects() {
+        if (!state.project) return;
+        state.project.updated = Date.now();
+        const index = state.projects.findIndex((project) => project.id === state.project.id);
+        if (index < 0) state.projects.unshift(state.project);
+        else state.projects[index] = state.project;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.projects));
+          localStorage.setItem(ACTIVE_KEY, state.project.id);
+          $('#save-state').innerHTML = '<span class="save-dot"></span>Enregistré';
+        } catch (error) {
+          $('#save-state').innerHTML = '<span class="save-dot" style="background:var(--warning)"></span>Stockage plein';
+          toast(error.name === 'QuotaExceededError' ? 'Stockage local plein. Télécharge une sauvegarde du projet.' : 'Sauvegarde locale impossible dans ce contexte.');
+        }
+      }
+      function scheduleSave() {
+        $('#save-state').innerHTML = '<span class="save-dot" style="background:var(--warning)"></span>Enregistrement…';
+        clearTimeout(state.saveTimer);
+        state.saveTimer = setTimeout(saveProjects, 250);
+      }
+      function currentFrame() { return state.project.frames[state.frame]; }
+      function currentLayer() { return currentFrame()?.layers.find((layer) => layer.id === state.layer) || currentFrame()?.layers.at(-1); }
+      function savePreferences() {
+        try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(state.preferences)); }
+        catch { toast('Impossible d’enregistrer ces préférences sur cet appareil.'); }
+      }
+      function applyPreferences() {
+        document.documentElement.dataset.theme = state.preferences.theme;
+        $('.stage').classList.toggle('grid-hidden', !state.preferences.stageGrid);
+        canvas.style.transform = `scale(${state.zoom})`;
+        $('#setting-reset-frame').checked = state.preferences.resetAfterPlayback;
+        $('#setting-frame-duration').value = String(state.preferences.frameDuration);
+        $('#setting-insert-position').value = state.preferences.insertPosition;
+        $('#setting-navigation-mode').value = state.preferences.navigationMode;
+        $('#setting-layer-scope').value = state.preferences.layerScope;
+        $('#setting-delete-scope').value = state.preferences.deleteScope;
+        $('#setting-pivot').checked = state.preferences.pivotEditing;
+        $('#setting-onion').checked = state.preferences.onionSkin;
+        $('#setting-onion-appearance').checked = state.preferences.onionSkin;
+        $('#setting-theme').value = state.preferences.theme;
+        $('#setting-stage-grid').checked = state.preferences.stageGrid;
+        $('#setting-wheel-zoom').checked = state.preferences.wheelZoom;
+        $('#setting-invert-zoom').checked = state.preferences.invertZoom;
+        $('#setting-shortcuts').checked = state.preferences.shortcuts;
+      }
+      function setSettingsTab(name) {
+        $$('[data-settings-tab]').forEach((button) => {
+          if (button.dataset.settingsTab === name) button.setAttribute('aria-current', 'page');
+          else button.removeAttribute('aria-current');
+        });
+        $$('[data-settings-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.settingsPanel === name));
+        if (name === 'backup') $('#backup-project-count').textContent = String(safeReadProjects().length);
+      }
+      function navigateFrame(direction) {
+        if (state.preferences.navigationMode === 'frames') return selectFrame(state.frame + direction);
+        for (let index = state.frame + direction; index >= 0 && index < state.project.frames.length; index += direction) {
+          const hasDrawing = state.project.frames[index].layers.some((layer) => layer.visible && layer.strokes.length > 0);
+          if (hasDrawing) return selectFrame(index);
+        }
+        toast('Aucun autre dessin dans cette direction.');
+      }
+      function cloneFrames() { return JSON.stringify(state.project.frames); }
+      function pushHistory() {
+        state.history.push(cloneFrames());
+        if (state.history.length > MAX_HISTORY) state.history.shift();
+        state.future.length = 0;
+      }
+      function fitCanvas() {
+        canvas.width = state.project.width;
+        canvas.height = state.project.height;
+        canvas.style.aspectRatio = `${state.project.width} / ${state.project.height}`;
+        drawCanvas();
+      }
+      function drawLayer(context, layer) {
+        if (!layer.visible) return;
+        const layerCanvas = document.createElement('canvas');
+        layerCanvas.width = context.canvas.width;
+        layerCanvas.height = context.canvas.height;
+        const layerContext = layerCanvas.getContext('2d');
+        for (const stroke of layer.strokes || []) {
+          if (stroke.tool === 'image' && stroke.image) {
+            let image = imageCache.get(stroke.image);
+            if (!image) {
+              image = new Image();
+              image.onload = () => drawCanvas();
+              image.src = stroke.image;
+              imageCache.set(stroke.image, image);
+            }
+            if (image.complete && image.naturalWidth) layerContext.drawImage(image, 0, 0);
+            continue;
+          }
+          if (!stroke.points?.length) continue;
+          layerContext.save();
+          layerContext.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+          layerContext.strokeStyle = stroke.color;
+          layerContext.fillStyle = stroke.color;
+          layerContext.lineWidth = stroke.size;
+          layerContext.lineCap = 'round';
+          layerContext.lineJoin = 'round';
+          if (stroke.tool === 'rectangle') {
+            const first = stroke.points[0];
+            const last = stroke.points.at(-1);
+            layerContext.strokeRect(first.x, first.y, last.x - first.x, last.y - first.y);
+          } else if (stroke.tool === 'text') {
+            const point = stroke.points[0];
+            layerContext.font = `${stroke.size * 2}px sans-serif`;
+            layerContext.fillText(stroke.text || '', point.x, point.y);
+          } else {
+            layerContext.beginPath();
+            layerContext.moveTo(stroke.points[0].x, stroke.points[0].y);
+            if (stroke.points.length === 1) layerContext.lineTo(stroke.points[0].x + 0.1, stroke.points[0].y + 0.1);
+            else for (let index = 1; index < stroke.points.length; index += 1) layerContext.lineTo(stroke.points[index].x, stroke.points[index].y);
+            layerContext.stroke();
+          }
+          layerContext.restore();
+        }
+        context.save();
+        context.globalAlpha *= layer.opacity ?? 1;
+        context.drawImage(layerCanvas, 0, 0);
+        context.restore();
+      }
+      function drawCanvas() {
+        if (!state.project) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = state.project.background || '#edf0f4';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (state.preferences.onionSkin && state.frame > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          state.project.frames[state.frame - 1].layers.forEach((layer) => drawLayer(ctx, layer));
+          ctx.restore();
+        }
+        const frame = currentFrame();
+        if (frame) frame.layers.forEach((layer) => drawLayer(ctx, layer));
+        const pivotLayer = currentLayer();
+        if (state.preferences.pivotEditing && pivotLayer?.pivot) {
+          ctx.save();
+          ctx.strokeStyle = '#d65350';
+          ctx.lineWidth = Math.max(2, canvas.width / 800);
+          ctx.beginPath();
+          ctx.arc(pivotLayer.pivot.x, pivotLayer.pivot.y, canvas.width / 120, 0, Math.PI * 2);
+          ctx.moveTo(pivotLayer.pivot.x - canvas.width / 80, pivotLayer.pivot.y);
+          ctx.lineTo(pivotLayer.pivot.x + canvas.width / 80, pivotLayer.pivot.y);
+          ctx.moveTo(pivotLayer.pivot.x, pivotLayer.pivot.y - canvas.width / 80);
+          ctx.lineTo(pivotLayer.pivot.x, pivotLayer.pivot.y + canvas.width / 80);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+        renderFrames();
+      }
+      function renderFrames() {
+        const framesEl = $('#frames');
+        framesEl.replaceChildren();
+        state.project.frames.forEach((frame, index) => {
+          const button = document.createElement('button');
+          button.className = 'frame-cell';
+          button.type = 'button';
+          button.setAttribute('aria-current', String(index === state.frame));
+          button.title = `Image ${index + 1} · ${frame.duration || 1} temps`;
+          const number = document.createElement('span');
+          number.textContent = String(index + 1).padStart(2, '0');
+          const thumb = document.createElement('canvas');
+          thumb.className = 'frame-thumb';
+          thumb.width = 96;
+          thumb.height = 54;
+          const thumbContext = thumb.getContext('2d');
+          thumbContext.fillStyle = state.project.background || '#edf0f4';
+          thumbContext.fillRect(0, 0, thumb.width, thumb.height);
+          thumbContext.save();
+          thumbContext.scale(thumb.width / state.project.width, thumb.height / state.project.height);
+          frame.layers.forEach((layer) => drawLayer(thumbContext, layer));
+          thumbContext.restore();
+          button.append(number, thumb);
+          button.addEventListener('click', () => selectFrame(index));
+          framesEl.append(button);
+        });
+        $('#frame-range').max = String(state.project.frames.length);
+        $('#frame-range').value = String(state.frame + 1);
+        $('#frame-count-label').textContent = `${state.project.frames.length} ${state.project.frames.length === 1 ? 'image' : 'images'}`;
+        $('#active-frame-label').textContent = `Image ${state.frame + 1} / ${state.project.frames.length}`;
+        $('#dimensions-label').textContent = `${state.project.width} × ${state.project.height}`;
+        $('#fps-label').textContent = `${state.project.fps} i/s`;
+        renderLayers();
+      }
+      function renderLayers() {
+        const list = $('#layer-list');
+        const names = $('#timeline-layer-names');
+        list.replaceChildren();
+        names.replaceChildren();
+        const layers = currentFrame()?.layers || [];
+        layers.forEach((layer) => {
+          const row = document.createElement('div');
+          row.className = `layer-row${layer.id === state.layer ? ' active' : ''}`;
+          const visible = document.createElement('button');
+          visible.className = 'layer-visible';
+          visible.type = 'button';
+          visible.textContent = layer.visible ? '◉' : '○';
+          visible.setAttribute('aria-label', layer.visible ? 'Masquer le calque' : 'Afficher le calque');
+          visible.setAttribute('aria-pressed', String(layer.visible));
+          visible.addEventListener('click', () => { layer.visible = !layer.visible; drawCanvas(); scheduleSave(); });
+          const select = document.createElement('button');
+          select.className = 'layer-select';
+          select.type = 'button';
+          select.textContent = layer.name;
+          select.addEventListener('click', () => selectLayer(layer.id));
+          row.append(visible, select);
+          list.append(row);
+          if (state.preferences.layerScope !== 'selected' || layer.id === state.layer) {
+            const timelineRow = document.createElement('div');
+            timelineRow.className = `timeline-layer-name${layer.id === state.layer ? ' active' : ''}`;
+            timelineRow.textContent = layer.name;
+            names.append(timelineRow);
+          }
+        });
+        const layer = currentLayer();
+        $('#layer-opacity').value = String(Math.round((layer?.opacity ?? 1) * 100));
+        $('#opacity-value').textContent = `${$('#layer-opacity').value}%`;
+      }
+      function selectLayer(id) { state.layer = id; renderLayers(); }
+      function selectFrame(index) {
+        state.frame = Math.max(0, Math.min(index, state.project.frames.length - 1));
+        const frame = currentFrame();
+        if (!frame.layers.some((layer) => layer.id === state.layer)) state.layer = frame.layers.at(-1)?.id;
+        drawCanvas();
+      }
+      function openModal(id) { $(`#${id}`).classList.add('open'); }
+      function closeModal(id) { $(`#${id}`).classList.remove('open'); }
+      function setProject(project) {
+        stopPlayback();
+        project.frames.forEach((frame) => {
+          frame.duration = Number(frame.duration) || state.preferences.frameDuration;
+          frame.layers = Array.isArray(frame.layers) && frame.layers.length ? frame.layers : [makeLayer()];
+          frame.layers.forEach((layer) => { layer.visible ??= true; layer.opacity ??= 1; layer.strokes ??= []; });
+        });
+        state.project = project;
+        state.frame = 0;
+        state.layer = project.frames[0].layers.at(-1)?.id;
+        state.history.length = 0;
+        state.future.length = 0;
+        state.projects = safeReadProjects();
+        const existing = state.projects.findIndex((item) => item.id === project.id);
+        if (existing < 0) state.projects.unshift(project);
+        else state.projects[existing] = project;
+        $('.project-name').textContent = project.name;
+        $('#save-state').innerHTML = '<span class="save-dot"></span>Enregistré';
+        fitCanvas();
+        saveProjects();
+      }
+      function makePreview(project) {
+        const preview = document.createElement('canvas');
+        preview.width = 240;
+        preview.height = 150;
+        const context = preview.getContext('2d');
+        context.fillStyle = project.background || '#edf0f4';
+        context.fillRect(0, 0, preview.width, preview.height);
+        context.save();
+        context.scale(preview.width / project.width, preview.height / project.height);
+        project.frames[0].layers.forEach((layer) => drawLayer(context, layer));
+        context.restore();
+        return preview.toDataURL('image/png');
+      }
+      function showProjects() {
+        state.projects = safeReadProjects();
+        const grid = $('#project-grid');
+        grid.replaceChildren();
+        if (!state.projects.length) {
+          const empty = document.createElement('div');
+          empty.className = 'project-empty';
+          empty.textContent = 'Pas encore de projet. Crée une toile pour commencer.';
+          grid.append(empty);
+        }
+        state.projects.forEach((project) => {
+          const card = document.createElement('article');
+          card.className = 'project-card';
+          const preview = document.createElement('img');
+          preview.className = 'project-preview';
+          preview.src = makePreview(project);
+          preview.alt = `Aperçu de ${project.name}`;
+          const info = document.createElement('div');
+          info.className = 'project-card-info';
+          const name = document.createElement('strong');
+          name.textContent = project.name;
+          const details = document.createElement('span');
+          details.textContent = `${project.width} × ${project.height} · ${project.fps} i/s`;
+          info.append(name, details);
+          const controls = document.createElement('div');
+          controls.className = 'project-card-controls';
+          const open = document.createElement('button');
+          open.type = 'button'; open.textContent = 'Ouvrir';
+          open.addEventListener('click', () => { setProject(project); closeModal('projects-modal'); });
+          const remove = document.createElement('button');
+          remove.type = 'button'; remove.textContent = 'Supprimer';
+          remove.addEventListener('click', () => {
+            if (!confirm(`Supprimer « ${project.name} » de cet appareil ?`)) return;
+            state.projects = safeReadProjects().filter((item) => item.id !== project.id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.projects));
+            showProjects();
+            if (state.project?.id === project.id) toast('Ce projet a été supprimé du stockage local.');
+          });
+          controls.append(open, remove);
+          card.append(preview, info, controls);
+          grid.append(card);
+        });
+        openModal('projects-modal');
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+      function safeFilename(name) { return (name || 'toolsquid').replace(/[\\/:*?"<>|]+/gu, '-').slice(0, 80) || 'toolsquid'; }
+      function renderExportCanvas(frame) {
+        const output = document.createElement('canvas');
+        output.width = state.project.width;
+        output.height = state.project.height;
+        const outputContext = output.getContext('2d');
+        outputContext.fillStyle = state.project.background || '#edf0f4';
+        outputContext.fillRect(0, 0, output.width, output.height);
+        frame.layers.forEach((layer) => drawLayer(outputContext, layer));
+        return output;
+      }
+      function exportPNG() {
+        renderExportCanvas(currentFrame()).toBlob((blob) => {
+          if (!blob) return toast('Impossible de créer cette image.');
+          downloadBlob(blob, `${safeFilename(state.project.name)}-image-${state.frame + 1}.png`);
+          closeModal('export-modal');
+          toast('Image PNG exportée.');
+        }, 'image/png');
+      }
+      function exportProject() {
+        const blob = new Blob([JSON.stringify(state.project, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, `${safeFilename(state.project.name)}.toolsquid.json`);
+        closeModal('export-modal');
+        toast('Sauvegarde du projet téléchargée.');
+      }
+      function exportWebM() {
+        if (!canvas.captureStream || !window.MediaRecorder) return toast('L’export WebM n’est pas pris en charge par ce navigateur.');
+        if (!window.isSecureContext && location.protocol !== 'file:') return toast('Ouvre le studio en HTTPS pour exporter une vidéo.');
+        const stream = canvas.captureStream(state.project.fps);
+        const recorderOptions = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? { mimeType: 'video/webm;codecs=vp9' } : { mimeType: 'video/webm' };
+        let recorder;
+        try { recorder = new MediaRecorder(stream, recorderOptions); }
+        catch { stream.getTracks().forEach((track) => track.stop()); return toast('Encodage WebM indisponible sur ce navigateur.'); }
+        const chunks = [];
+        recorder.addEventListener('dataavailable', (event) => { if (event.data.size) chunks.push(event.data); });
+        recorder.addEventListener('stop', () => {
+          stream.getTracks().forEach((track) => track.stop());
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          if (!blob.size) return toast('La vidéo exportée est vide.');
+          downloadBlob(blob, `${safeFilename(state.project.name)}.webm`);
+          closeModal('export-modal');
+          toast('Vidéo WebM exportée.');
+        }, { once: true });
+        const returnFrame = state.frame;
+        let index = 0;
+        const delay = Math.max(10, Math.round(1000 / state.project.fps));
+        stopPlayback();
+        selectFrame(0);
+        recorder.start();
+        const timer = setInterval(() => {
+          if (index >= state.project.frames.length) {
+            clearInterval(timer);
+            recorder.stop();
+            selectFrame(returnFrame);
+            return;
+          }
+          selectFrame(index);
+          index += 1;
+        }, delay);
+        closeModal('export-modal');
+        toast('Création de la vidéo en cours…', Math.max(3000, state.project.frames.length * delay));
+      }
+      function confirmExport() {
+        const type = $('input[name="export-kind"]:checked').value;
+        if (type === 'png') exportPNG();
+        if (type === 'project') exportProject();
+        if (type === 'webm') exportWebM();
+      }
+      function stopPlayback(resetFrame = false) {
+        if (state.playTimer) clearInterval(state.playTimer);
+        if (state.playTimer) clearTimeout(state.playTimer);
+        state.playTimer = null;
+        state.playing = false;
+        $('#play-button').textContent = '▶';
+        $('#play-button').setAttribute('aria-label', 'Lire l’animation');
+        if (resetFrame && state.preferences.resetAfterPlayback) selectFrame(state.playStart);
+      }
+      function togglePlayback() {
+        if (state.playing) return stopPlayback(true);
+        if (state.project.frames.length < 2) return toast('Ajoute une deuxième image pour lire l’animation.');
+        state.playing = true;
+        state.playStart = state.frame;
+        $('#play-button').textContent = 'Ⅱ';
+        $('#play-button').setAttribute('aria-label', 'Mettre l’animation en pause');
+        const advance = () => {
+          state.playTimer = setTimeout(() => {
+            if (state.frame + 1 >= state.project.frames.length) return stopPlayback(state.preferences.resetAfterPlayback);
+            selectFrame(state.frame + 1);
+            advance();
+          }, Math.max(10, Math.round(1000 / state.project.fps * (currentFrame().duration || state.preferences.frameDuration))));
+        };
+        advance();
+      }
+      function addFrame(duplicate = false) {
+        pushHistory();
+        const frame = duplicate ? JSON.parse(JSON.stringify(currentFrame())) : makeFrame();
+        if (duplicate) frame.id = crypto.randomUUID();
+        const insertAt = state.preferences.insertPosition === 'first' && !duplicate ? 0 : state.frame + 1;
+        state.project.frames.splice(insertAt, 0, frame);
+        state.frame = insertAt;
+        state.layer = frame.layers.at(-1)?.id;
+        drawCanvas();
+        scheduleSave();
+        toast(duplicate ? 'Image dupliquée.' : 'Nouvelle image ajoutée.');
+      }
+      function deleteFrame() {
+        if (state.project.frames.length === 1) return toast('Le projet doit garder au moins une image.');
+        pushHistory();
+        state.project.frames.splice(state.frame, 1);
+        state.frame = Math.max(0, state.frame - 1);
+        state.layer = currentFrame().layers.at(-1)?.id;
+        drawCanvas();
+        scheduleSave();
+        toast('Image supprimée.');
+      }
+      function addLayer() {
+        pushHistory();
+        const frame = currentFrame();
+        const layer = makeLayer(`Calque ${frame.layers.length + 1}`);
+        frame.layers.push(layer);
+        state.layer = layer.id;
+        drawCanvas();
+        scheduleSave();
+        toast('Calque ajouté.');
+      }
+      function deleteLayer() {
+        const layer = currentLayer();
+        if (!layer) return;
+        pushHistory();
+        const targetName = layer.name;
+        const frames = state.preferences.deleteScope === 'same-name' ? state.project.frames : [currentFrame()];
+        frames.forEach((frame) => {
+          frame.layers = frame.layers.filter((item) => item !== layer && !(state.preferences.deleteScope === 'same-name' && item.name === targetName));
+          if (!frame.layers.length) frame.layers.push(makeLayer());
+        });
+        state.layer = currentFrame().layers.at(-1).id;
+        drawCanvas(); scheduleSave(); toast('Calque supprimé.');
+      }
+      function historyMove(source, destination) {
+        if (!source.length) return toast(source === state.history ? 'Rien à annuler.' : 'Rien à rétablir.');
+        destination.push(cloneFrames());
+        state.project.frames = JSON.parse(source.pop());
+        state.frame = Math.min(state.frame, state.project.frames.length - 1);
+        state.layer = currentFrame().layers.at(-1)?.id;
+        drawCanvas();
+        scheduleSave();
+      }
+      function pointFromEvent(event) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
+      }
+      function paintSegment(stroke, point) {
+        const layer = currentLayer();
+        if (!layer) return;
+        ctx.save();
+        ctx.globalAlpha = layer.opacity ?? 1;
+        ctx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const last = stroke.points.at(-1);
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+        ctx.restore();
+        stroke.points.push(point);
+      }
+      canvas.addEventListener('pointerdown', (event) => {
+        if (!state.project || event.button !== 0) return;
+        const point = pointFromEvent(event);
+        const layer = currentLayer();
+        if (!layer) return;
+        if (state.tool === 'fill') {
+          pushHistory();
+          state.project.background = state.color;
+          $('#background-color').value = state.color;
+          drawCanvas(); scheduleSave(); return;
+        }
+        if (state.tool === 'eyedropper') {
+          const pixel = ctx.getImageData(Math.round(point.x), Math.round(point.y), 1, 1).data;
+          if (pixel[3]) {
+            colorInput.value = `#${[...pixel].slice(0, 3).map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+            state.color = colorInput.value;
+          }
+          setTool('brush'); return;
+        }
+        if (state.tool === 'select') {
+          if (state.preferences.pivotEditing) {
+            pushHistory();
+            layer.pivot = point;
+            drawCanvas(); scheduleSave();
+          }
+          return;
+        }
+        if (state.tool === 'text') {
+          const text = prompt('Texte à ajouter sur la toile :');
+          if (!text) return;
+          pushHistory();
+          layer.strokes.push({ tool: 'text', color: state.color, size: state.size, text, points: [point] });
+          drawCanvas(); scheduleSave(); return;
+        }
+        pushHistory();
+        state.drawing = { layer, stroke: { tool: state.tool, color: state.color, size: state.size, points: [point] } };
+        canvas.setPointerCapture(event.pointerId);
+        if (state.tool === 'rectangle') drawCanvas();
+        else paintSegment(state.drawing.stroke, { x: point.x + 0.1, y: point.y + 0.1 });
+      });
+      canvas.addEventListener('pointermove', (event) => {
+        if (!state.drawing) return;
+        const point = pointFromEvent(event);
+        if (state.drawing.stroke.tool === 'rectangle') {
+          drawCanvas();
+          ctx.save(); ctx.strokeStyle = state.drawing.stroke.color; ctx.lineWidth = state.drawing.stroke.size;
+          const start = state.drawing.stroke.points[0]; ctx.strokeRect(start.x, start.y, point.x - start.x, point.y - start.y); ctx.restore();
+          return;
+        }
+        paintSegment(state.drawing.stroke, point);
+      });
+      function finishStroke() {
+        if (!state.drawing) return;
+        const { layer, stroke } = state.drawing;
+        layer.strokes.push(stroke);
+        state.drawing = null;
+        drawCanvas(); scheduleSave();
+      }
+      canvas.addEventListener('pointerup', (event) => {
+        if (!state.drawing) return;
+        const point = pointFromEvent(event);
+        if (state.drawing.stroke.tool === 'rectangle') state.drawing.stroke.points.push(point);
+        else if (state.drawing.stroke.points.length === 1) state.drawing.stroke.points.push({ x: point.x + 0.1, y: point.y + 0.1 });
+        finishStroke();
+      });
+      canvas.addEventListener('pointercancel', () => { if (state.drawing) { state.drawing = null; drawCanvas(); } });
+      canvas.addEventListener('wheel', (event) => {
+        if (!state.preferences.wheelZoom || event.ctrlKey) return;
+        event.preventDefault();
+        const direction = Math.sign(event.deltaY) * (state.preferences.invertZoom ? -1 : 1);
+        state.zoom = Math.max(0.25, Math.min(3, state.zoom * (direction > 0 ? 0.9 : 1.1)));
+        canvas.style.transform = `scale(${state.zoom})`;
+        $('#status-message').textContent = `Zoom ${Math.round(state.zoom * 100)}%`;
+      }, { passive: false });
+
+      function setTool(tool) {
+        state.tool = tool;
+        $$('[data-tool]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.tool === tool)));
+        if (tool === 'brush' || tool === 'eraser' || tool === 'rectangle' || tool === 'text') showSideTab('properties');
+        canvas.style.cursor = tool === 'select' ? 'default' : tool === 'text' ? 'text' : 'crosshair';
+      }
+      function showSideTab(tab) {
+        const layers = tab === 'layers';
+        $('#layers-tab').setAttribute('aria-selected', String(layers));
+        $('#properties-tab').setAttribute('aria-selected', String(!layers));
+        $('#layers-panel').classList.toggle('active', layers);
+        $('#properties-panel').classList.toggle('active', !layers);
+      }
+      async function loadImageFile(file) {
+        if (!file || !file.type.startsWith('image/')) return toast('Choisis un fichier image valide.');
+        if (file.size > 25 * 1024 * 1024) return toast('Cette image dépasse la limite de 25 Mo.');
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Lecture du fichier impossible.'));
+          reader.readAsDataURL(file);
+        });
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('Image illisible.')); img.src = dataUrl;
+        });
+        const scale = Math.min(state.project.width / image.width, state.project.height / image.height, 1);
+        const width = image.width * scale; const height = image.height * scale;
+        const imageCanvas = document.createElement('canvas'); imageCanvas.width = state.project.width; imageCanvas.height = state.project.height;
+        const imageContext = imageCanvas.getContext('2d');
+        imageContext.drawImage(image, (state.project.width - width) / 2, (state.project.height - height) / 2, width, height);
+        const layer = makeLayer(file.name.replace(/\.[^.]+$/u, '').slice(0, 30) || 'Image importée');
+        layer.strokes.push({ tool: 'image', image: imageCanvas.toDataURL('image/png'), points: [] });
+        layer.visible = true;
+        state.assets.push({ name: file.name, type: 'image', data: dataUrl });
+        pushHistory();
+        currentFrame().layers.push(layer);
+        state.layer = layer.id;
+        drawCanvas(); scheduleSave(); renderLibrary();
+        toast('Image ajoutée comme nouveau calque.');
+      }
+      const imageCache = new Map();
+      async function importProjectFile(file) {
+        try {
+          const parsed = JSON.parse(await file.text());
+          const imported = Array.isArray(parsed) ? parsed : [parsed];
+          const isValid = (project) => project?.version === 1 && Array.isArray(project.frames) && project.frames.length > 0 && Number.isInteger(project.width) && Number.isInteger(project.height) && project.width >= 16 && project.height >= 16 && project.width <= 3840 && project.height <= 2160;
+          if (!imported.length || imported.some((project) => !isValid(project))) throw new Error('Format de projet non reconnu ou dimensions invalides.');
+          const projects = imported.map((project) => ({ ...project, id: crypto.randomUUID() }));
+          if (Array.isArray(parsed)) {
+            const merged = [...projects, ...safeReadProjects()];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          }
+          setProject(projects[0]); closeModal('projects-modal'); closeModal('settings-modal');
+          toast(projects.length > 1 ? `${projects.length} projets importés.` : 'Projet importé.');
+        } catch (error) { toast(`Import impossible : ${error.message}`); }
+      }
+      function renderLibrary() {
+        const list = $('#library-assets'); list.replaceChildren();
+        if (!state.assets.length) { const empty = document.createElement('span'); empty.className = 'notice'; empty.textContent = 'La bibliothèque est vide. Importe une image ou un son pour commencer.'; list.append(empty); }
+        state.assets.forEach((asset) => {
+          const item = document.createElement('div'); item.className = 'asset-item';
+          if (asset.type === 'image') { const image = document.createElement('img'); image.src = asset.data; image.alt = ''; item.append(image); }
+          const name = document.createElement('span'); name.textContent = asset.name; item.append(name);
+          if (asset.type === 'audio') {
+            const audio = document.createElement('audio'); audio.controls = true; audio.src = asset.url; audio.style.width = '100%'; item.append(audio);
+          }
+          list.append(item);
+        });
+      }
+      function addAudioFile(file) {
+        if (!file?.type.startsWith('audio/')) return toast('Choisis un fichier audio valide.');
+        if (file.size > 40 * 1024 * 1024) return toast('Ce fichier dépasse la limite de 40 Mo.');
+        const url = URL.createObjectURL(file);
+        state.assets.push({ name: file.name, type: 'audio', url, file });
+        renderLibrary();
+        const audioView = $('#audio-assets'); audioView.replaceChildren();
+        state.assets.filter((asset) => asset.type === 'audio').forEach((asset) => {
+          const item = document.createElement('div'); item.className = 'asset-item';
+          const label = document.createElement('span'); label.textContent = asset.name;
+          const audio = document.createElement('audio'); audio.controls = true; audio.src = asset.url; audio.style.width = '100%';
+          item.append(label, audio); audioView.append(item);
+        });
+        toast('Audio ajouté à la bibliothèque.');
+      }
+
+      $('#add-frame').addEventListener('click', () => addFrame(false));
+      $('#duplicate-frame').addEventListener('click', () => addFrame(true));
+      $('#delete-frame').addEventListener('click', deleteFrame);
+      $('#add-layer').addEventListener('click', addLayer);
+      $('#delete-layer').addEventListener('click', deleteLayer);
+      $('#play-button').addEventListener('click', togglePlayback);
+      $('#previous-frame').addEventListener('click', () => navigateFrame(-1));
+      $('#next-frame').addEventListener('click', () => navigateFrame(1));
+      $('#frame-range').addEventListener('input', (event) => selectFrame(Number(event.target.value) - 1));
+      $('#undo-button').addEventListener('click', () => historyMove(state.history, state.future));
+      $('#redo-button').addEventListener('click', () => historyMove(state.future, state.history));
+      $('#layers-tab').addEventListener('click', () => showSideTab('layers'));
+      $('#properties-tab').addEventListener('click', () => showSideTab('properties'));
+      $('#layer-opacity').addEventListener('input', (event) => {
+        const layer = currentLayer(); if (!layer) return;
+        layer.opacity = Number(event.target.value) / 100;
+        $('#opacity-value').textContent = `${event.target.value}%`;
+        drawCanvas(); scheduleSave();
+      });
+      $('#background-color').addEventListener('input', (event) => { state.project.background = event.target.value; drawCanvas(); scheduleSave(); });
+      $('#brush-size').addEventListener('input', (event) => { state.size = Number(event.target.value); $('#brush-size-value').textContent = `${state.size} px`; });
+      colorInput.addEventListener('input', () => { state.color = colorInput.value; $$('.swatch').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.color === state.color))); });
+      $$('.swatch').forEach((button) => button.addEventListener('click', () => { colorInput.value = button.dataset.color; colorInput.dispatchEvent(new Event('input')); }));
+      $$('[data-tool]').forEach((button) => button.addEventListener('click', () => setTool(button.dataset.tool)));
+      $('#image-import').addEventListener('change', async (event) => { try { await loadImageFile(event.target.files[0]); } catch (error) { toast(error.message); } event.target.value = ''; });
+      $('#library-image-import').addEventListener('click', () => $('#image-import').click());
+      $('#library-audio-import').addEventListener('click', () => $('#audio-import').click());
+      $('#audio-import').addEventListener('change', (event) => { addAudioFile(event.target.files[0]); event.target.value = ''; });
+      $('#projects-button').addEventListener('click', showProjects);
+      $('#new-project-button').addEventListener('click', () => { closeModal('projects-modal'); $('#project-modal-title').textContent = 'Nouveau projet'; $('#create-project').textContent = 'Créer le projet'; openModal('project-modal'); });
+      $('#create-project').addEventListener('click', () => {
+        const width = Number($('#new-width').value); const height = Number($('#new-height').value);
+        if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 3840 || height > 2160) return toast('Dimensions invalides. Choisis une largeur entre 16 et 3840 et une hauteur entre 16 et 2160 px.');
+        const project = makeProject($('#new-name').value, width, height, Number($('#new-fps').value), state.workflow);
+        setProject(project); closeModal('project-modal'); toast('Projet créé.');
+      });
+      $$('.preset').forEach((button) => button.addEventListener('click', () => {
+        const [width, height] = button.dataset.size.split(','); $('#new-width').value = width; $('#new-height').value = height;
+      }));
+      $$('[data-workflow]').forEach((button) => button.addEventListener('click', () => {
+        state.workflow = button.dataset.workflow;
+        $$('[data-workflow]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        if (state.workflow === 'keyframes') toast('Le mode images clés est enregistré dans le projet. Les interpolations arrivent bientôt.');
+      }));
+      $('#library-button').addEventListener('click', () => { renderLibrary(); openModal('library-modal'); });
+      $('#actions-button').addEventListener('click', () => openModal('export-modal'));
+      $('#export-button').addEventListener('click', () => openModal('export-modal'));
+      $('#confirm-export').addEventListener('click', confirmExport);
+      $('#settings-button').addEventListener('click', () => {
+        applyPreferences();
+        $('#settings-name').value = state.project.name;
+        $('#settings-fps').value = String(state.project.fps);
+        $('#settings-background-color').value = state.project.background || '#edf0f4';
+        openModal('settings-modal');
+      });
+      $('#project-name-button').addEventListener('click', () => $('#settings-button').click());
+      $('#rename-project').addEventListener('click', () => {
+        state.project.name = $('#settings-name').value.trim() || 'Sans titre';
+        state.project.fps = Number($('#settings-fps').value);
+        $('.project-name').textContent = state.project.name;
+        $('#fps-label').textContent = `${state.project.fps} i/s`;
+        scheduleSave(); closeModal('settings-modal'); toast('Réglages mis à jour.');
+      });
+      $('#save-project-file').addEventListener('click', exportProject);
+      $$('[data-settings-tab]').forEach((button) => button.addEventListener('click', () => setSettingsTab(button.dataset.settingsTab)));
+      const preferenceInputs = {
+        'setting-reset-frame': ['resetAfterPlayback', 'checked'],
+        'setting-frame-duration': ['frameDuration', 'number'],
+        'setting-insert-position': ['insertPosition', 'value'],
+        'setting-navigation-mode': ['navigationMode', 'value'],
+        'setting-layer-scope': ['layerScope', 'value'],
+        'setting-delete-scope': ['deleteScope', 'value'],
+        'setting-pivot': ['pivotEditing', 'checked'],
+        'setting-onion': ['onionSkin', 'checked'],
+        'setting-theme': ['theme', 'value'],
+        'setting-stage-grid': ['stageGrid', 'checked'],
+        'setting-wheel-zoom': ['wheelZoom', 'checked'],
+        'setting-invert-zoom': ['invertZoom', 'checked'],
+        'setting-shortcuts': ['shortcuts', 'checked']
+      };
+      Object.entries(preferenceInputs).forEach(([id, [key, property]]) => {
+        $(`#${id}`).addEventListener('change', (event) => {
+          const value = property === 'checked' ? event.target.checked : property === 'number' ? Number(event.target.value) : event.target.value;
+          state.preferences[key] = value;
+          if (key === 'onionSkin') $('#setting-onion-appearance').checked = value;
+          if (key === 'layerScope') renderLayers();
+          if (key === 'pivotEditing' || key === 'onionSkin') drawCanvas();
+          applyPreferences(); savePreferences();
+        });
+      });
+      $('#setting-onion-appearance').addEventListener('change', (event) => {
+        state.preferences.onionSkin = event.target.checked;
+        applyPreferences(); savePreferences(); drawCanvas();
+      });
+      $('#settings-background-color').addEventListener('input', (event) => {
+        state.project.background = event.target.value;
+        $('#background-color').value = event.target.value;
+        drawCanvas(); scheduleSave();
+      });
+      $('#backup-all-projects').addEventListener('click', () => {
+        saveProjects();
+        const blob = new Blob([JSON.stringify(safeReadProjects(), null, 2)], { type: 'application/json' });
+        downloadBlob(blob, 'toolsquid-sauvegarde.json');
+        toast('Sauvegarde de tous les projets téléchargée.');
+      });
+      $('#import-backup').addEventListener('click', () => $('#backup-file').click());
+      $('#backup-file').addEventListener('change', async (event) => {
+        if (event.target.files[0]) await importProjectFile(event.target.files[0]);
+        event.target.value = '';
+      });
+      $('#clear-projects').addEventListener('click', () => {
+        if (!confirm('Supprimer tous les projets enregistrés sur cet appareil ? Cette action est irréversible.')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        state.projects = [];
+        $('#backup-project-count').textContent = '0';
+        toast('Projets supprimés du stockage local. Le projet ouvert reste en mémoire jusqu’à sa fermeture.');
+      });
+      $('#import-project').addEventListener('click', () => $('#project-file').click());
+      $('#project-file').addEventListener('change', async (event) => { if (event.target.files[0]) await importProjectFile(event.target.files[0]); event.target.value = ''; });
+      $$('[data-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.close)));
+      $$('.modal-backdrop').forEach((backdrop) => backdrop.addEventListener('click', (event) => { if (event.target === backdrop) backdrop.classList.remove('open'); }));
+      $$('[data-timeline]').forEach((button) => button.addEventListener('click', () => {
+        const audio = button.dataset.timeline === 'audio';
+        $$('[data-timeline]').forEach((tab) => tab.setAttribute('aria-selected', String(tab === button)));
+        $('#frames-view').classList.toggle('hidden', audio);
+        $('#audio-view').classList.toggle('hidden', !audio);
+      }));
+      $('#frame-range').addEventListener('keydown', (event) => { if (event.key === 'ArrowRight') selectFrame(state.frame + 1); if (event.key === 'ArrowLeft') selectFrame(state.frame - 1); });
+      window.addEventListener('keydown', (event) => {
+        if (event.target.matches('input,textarea,select') || $$('.modal-backdrop.open').length) return;
+        if (event.code === 'Space') { event.preventDefault(); togglePlayback(); }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); historyMove(event.shiftKey ? state.future : state.history, event.shiftKey ? state.history : state.future); }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); saveProjects(); toast('Projet enregistré.'); }
+        if (event.key === 'ArrowRight') navigateFrame(1);
+        if (event.key === 'ArrowLeft') navigateFrame(-1);
+        const shortcuts = { b: 'brush', e: 'eraser', m: 'rectangle', v: 'select', i: 'eyedropper', g: 'fill', t: 'text' };
+        if (state.preferences.shortcuts && shortcuts[event.key.toLowerCase()]) setTool(shortcuts[event.key.toLowerCase()]);
+      });
+      window.addEventListener('beforeunload', () => { if (state.project) saveProjects(); stopPlayback(); });
+
+      state.projects = safeReadProjects();
+      const activeId = localStorage.getItem(ACTIVE_KEY);
+      const initial = state.projects.find((project) => project.id === activeId) || state.projects[0] || makeProject('Mon animation', 1920, 1080, 24);
+      applyPreferences();
+      setProject(initial);
+    })();
+  </script>
+</body>
+</html>
